@@ -5,6 +5,7 @@
 #include <time.h>
 #include <vector>
 
+
 using namespace std;
 
 class GRAPH {
@@ -15,28 +16,29 @@ private:
 	vector<vector<int>> strong_connect_components;
 	chrono::microseconds alghotithm_time;
 
-	int generate_orgraph(int number_of_vertices, bool**& orgraph) {
-		int number_of_edges = 0;
-		int flag = 1 + rand() % 3;
-		int a;
-		if (flag == 1) a = 1 + rand() % 9;
-		if (flag == 2) a = 10 + rand() % 19;
-		if (flag == 3) a = 100 + rand() % 90;
+	bool** generate_orgraph(int number_of_vertices, int number_of_edges) {
 
+		bool** orgraph = new bool*[number_of_vertices];
 		for (int i = 0; i < number_of_vertices; ++i) {
 			orgraph[i] = new bool[number_of_vertices];
 			for (int j = 0; j < number_of_vertices; ++j) {
-				int b = 1 + rand() % (number_of_vertices * (number_of_vertices - 1));
-				orgraph[i][j] = b % a == 0;
-			}
-			orgraph[i][i] = false;
-		}
-		for (int i = 0; i < number_of_vertices; ++i) {
-			for (int j = 0; j < number_of_vertices; ++j) {
-				if (orgraph[i][j] == true) ++number_of_edges;
+				orgraph[i][j] = false;
 			}
 		}
-		return number_of_edges;
+		int row = -1, column = -1;
+		for (int i = 0; i < number_of_edges; ++i) {
+			row = rand() % number_of_vertices;
+			column = rand() % number_of_vertices;
+			if (orgraph[row][column] == false && row != column) orgraph[row][column] = true;
+			else {
+				while (orgraph[row][column] == true || row == column){
+					row = rand() % number_of_vertices;
+					column = rand() % number_of_vertices;
+				}
+				orgraph[row][column] = true;
+			}
+		}
+		return orgraph;
 	}
 
 	bool** get_revesed_orgraph(int number_of_vertices, bool** mtx) {
@@ -107,14 +109,14 @@ private:
 	}
 
 public:
-	GRAPH(int number) {
-		if (number < 1) {
+	GRAPH(int number_v, int number_edg) {
+		if (number_v < 2 || number_edg < number_v - 1 || number_edg > (number_v - 1)*number_v) {
 			throw 1;
 		}
 		else {
-			number_of_vertices = number;
-			orgraph = new bool*[number_of_vertices];
-			number_of_edges = generate_orgraph(number_of_vertices, orgraph);
+			number_of_vertices = number_v;
+			number_of_edges = number_edg;
+			orgraph = generate_orgraph(number_of_vertices, number_of_edges);
 			alghotithm_time = get_time_of_strong_connect_components(number_of_vertices, orgraph, strong_connect_components);
 		}
 	}
@@ -134,27 +136,38 @@ public:
 
 	bool** get_orgraph() {return orgraph;}
 
-	chrono::microseconds get_alghorithm_time_in_ms() {return alghotithm_time;}
+	void print_graph() {
+		for (int i = 0; i < number_of_vertices; ++i) {
+			for (int j = 0; j < number_of_vertices; ++j) {
+				cout << orgraph[i][j] << " ";
+			}
+			cout << "\n";
+		}
+	}
+
+	int get_alghorithm_time_in_ms() {return alghotithm_time.count();}
 };
 
-int main() {
-
-	ofstream output_file("output.txt");
-
-	try {
-		int number_of_vertices;
+int main(){
+    ofstream output_file("output.txt");
+    try {
+		int number_of_vertices, number_of_edges;
 		cout << "Input number of vertices: ";
 		cin >> number_of_vertices;
-		GRAPH *orgraph = new GRAPH(number_of_vertices);
-		output_file << (*orgraph).get_number_of_vertices() << "\n" <<
-			(*orgraph).get_number_of_edges() << "\n" <<
-			(*orgraph).get_alghorithm_time_in_ms().count() << "\n";
+		cout << "Input number of edges: ";
+		cin >> number_of_edges;
+
+		int time;
+		GRAPH *orgraph = new GRAPH(number_of_vertices, number_of_edges); 
+        time = (*orgraph).get_alghorithm_time_in_ms();
 		delete orgraph;
+        output_file << "vertices: " << number_of_vertices << "\nedges: " << number_of_edges << "\ntime: " << time << "\n";
 	}
 	catch (int i) {
 		if (i == 1) {
-			cout << "Wrong number of vertices\n";
+			output_file << "Wrong number of vertices or edges\n";
 		}
 	}
-	return 0;
+    output_file.close();
+    return 0;
 }
